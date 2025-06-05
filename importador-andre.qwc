@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<QBWCXML>
+  <AppName>Importador de Transações André</AppName>
+  <AppID></AppID>
+  <AppURL>http://localhost:8000/qbxml</AppURL>
+  <AppDescription>Importa transações do Excel para o QuickBooks Desktop</AppDescription>
+  <AppSupport>http://localhost</AppSupport>
+  <UserName>andre</UserName>
+  <OwnerID>{57F3B9B6-86F1-4FCC-B1FF-967DE1813D20}</OwnerID>
+  <FileID>{57F3B9B6-86F1-4FCC-B1FF-967DE1813D20}</FileID>
+  <QBType>QBFS</QBType>
+  <Scheduler>
+    <RunEveryNMinutes>10</RunEveryNMinutes>
+  </Scheduler>
+</QBWCXML>
