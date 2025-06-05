@@ -2,7 +2,7 @@
 <QBWCXML>
   <AppName>Importador de Transações André</AppName>
   <AppID></AppID>
-  <AppURL>http://localhost:8000/qbxml</AppURL>
+    <AppURL>https://qbxml-upload.onrender.com/transacoes-exemplo.qbxml</AppURL>
   <AppDescription>Importa transações do Excel para o QuickBooks Desktop</AppDescription>
   <AppSupport>http://localhost</AppSupport>
   <UserName>andre</UserName>
