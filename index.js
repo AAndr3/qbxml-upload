@@ -1,36 +1,40 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const soap = require("soap");
+// server.js (ESM)
+import express from "express";
+import soap from "soap";
+import { fileURLToPath } from "url";
+import path from "path";
 
-// ---------- CONFIG ----------
+// ---------- ENV & SETUP ----------
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
 const PORT = process.env.PORT || 3000;
-const QBWC_USER = process.env.QBWC_USER || "andre";
-const QBWC_PASSWORD = process.env.QBWC_PASSWORD || "muda-isto";
-const DEFAULT_BANK = process.env.QBWC_BANK || "Canada Wise USD"; // tem de existir no QB
-const BASE_URL = process.env.BASE_URL || "https://qbxml-upload.onrender.com"; // URL do Render
 
-// Trabalho simples em memória: enviamos UM CheckAdd por ciclo; depois fica vazio
-let hasPendingJob = true;
+const QBWC_USER = process.env.QBWC_USER || "yitzac";
+const QBWC_PASSWORD = process.env.QBWC_PASSWORD || "Coolio135!";
+const DEFAULT_BANK = process.env.QBWC_BANK || "Canada Wise USD";
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+let hasPendingJob = true;   // demo: envia 1 CheckAdd e depois fica a 0
 let lastError = "";
 
 // ---------- HELPERS ----------
-function x(s = "") {
-  return String(s)
+const x = (s = "") =>
+  String(s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
-}
 
-function buildCheckAddQBXML({
+function gerarCheckAddQBXML({
   bankAccountFullName,
   payeeFullName,
   txnDate,
   memo,
   refNumber,
-  lines
+  lines, // [{ accountFullName, amount, memo }]
 }) {
   const expenseLines = lines
     .map(
@@ -65,9 +69,8 @@ function buildCheckAddQBXML({
 </QBXML>`;
 }
 
-// Exemplo a cair na conta "Canada Wise USD"
-function buildExampleQBXML() {
-  return buildCheckAddQBXML({
+function exemploQBXML() {
+  return gerarCheckAddQBXML({
     bankAccountFullName: DEFAULT_BANK,
     payeeFullName: "TUV SUD SOUTH ASIA PRIVATE LIMITED",
     txnDate: "2025-09-05",
@@ -77,116 +80,29 @@ function buildExampleQBXML() {
       {
         accountFullName: "Professional Services:Factory Audits and Certificates",
         amount: 1275.58,
-        memo: "Auditoria e certificados"
-      }
-    ]
+        memo: "Auditoria e certificados",
+      },
+    ],
   });
 }
 
-// ---------- EXPRESS ----------
-const app = express();
+// ---------- ROTAS HTTP (as tuas) ----------
+/** Dinâmico: /check.qbxml?...  (mantive igual ao teu) */
+app.get("/check.qbxml", (req, res) => {
+  const { bank, payee, date, memo, ref, account, amount, ...rest } = req.query;
 
-// Rota raiz
-app.get("/", (_req, res) => {
-  res.send("Servidor QBXML ativo ✅");
-});
-
-// Endpoint para descarregar o ficheiro .QWC
-app.get("/importador-andre.qwc", (_req, res) => {
-  const qwc = `<?xml version="1.0"?>
-<QBWCXML>
-  <AppName>Andre Importador</AppName>
-  <AppID></AppID>
-  <AppURL>${BASE_URL}/qbwc</AppURL>
-  <AppDescription>Integração QBXML via QuickBooks Web Connector</AppDescription>
-  <AppSupport>${BASE_URL}/</AppSupport>
-  <UserName>${QBWC_USER}</UserName>
-  <OwnerID>{57F3B9B0-86F4-4d34-AF38-AC1E5A1C3C9D}</OwnerID>
-  <FileID>{8A6B5B47-2D7E-4c1c-8F6E-7E2B3E7C9C11}</FileID>
-  <QBType>QBFS</QBType>
-  <Scheduler>
-    <RunEveryNMinutes>5</RunEveryNMinutes>
-  </Scheduler>
-  <IsReadOnly>false</IsReadOnly>
-</QBWCXML>`;
-  res.set("Content-Type", "text/xml; charset=utf-8");
-  res.set("Content-Disposition", 'attachment; filename="importador-andre.qwc"');
-  res.send(qwc);
-});
-
-// Endpoints de teste rápido (opcional): gerar QBXML via browser
-app.get("/check-exemplo.qbxml", (req, res) => {
-  res.set("Content-Type", "text/xml; charset=utf-8");
-  res.send(buildExampleQBXML());
-});
-
-// ---------- SOAP (QBWC) ----------
-const wsdlXml = fs.readFileSync(path.join(__dirname, "qbwc.wsdl"), "utf8");
-
-// Implementação dos métodos do Web Connector
-const service = {
-  QBWebConnectorSvc: {
-    QBWebConnectorSvcSoap: {
-      // 1) Login
-      authenticate(args) {
-        const user = args.strUserName;
-        const pass = args.strPassword;
-
-        if (user === QBWC_USER && pass === QBWC_PASSWORD) {
-          const ticket = `${Date.now()}-${Math.random()}`;
-          // Segundo valor "" diz ao QB para usar a company file aberta
-          return { authenticateResult: { string: [ticket, ""] } };
-        } else {
-          // Se falhar, segundo elemento "nvu" (not valid user)
-          return { authenticateResult: { string: ["", "nvu"] } };
-        }
-      },
-
-      // 2) Enviar pedido QBXML
-      sendRequestXML(args) {
-        // O QB chama isto repetidamente até devolvermos "" (sem trabalho)
-        if (!hasPendingJob) {
-          return { sendRequestXMLResult: "" };
-        }
-
-        // Aqui podes montar o QBXML dinamicamente (DB, fila, etc.)
-        const qbxml = buildExampleQBXML();
-        return { sendRequestXMLResult: qbxml };
-      },
-
-      // 3) Receber resposta do QB
-      receiveResponseXML(args) {
-        // args: { ticket, response, hresult, message }
-        // Podes inspecionar 'hresult' e 'message' para erros do QB
-        try {
-          // Marca como concluído este job
-          hasPendingJob = false;
-          // Retorna percentagem concluída (0..100). 100 = terminou.
-          return { receiveResponseXMLResult: 100 };
-        } catch (e) {
-          lastError = e?.message || "Erro desconhecido em receiveResponseXML";
-          // Valor negativo pede retry mais tarde
-          return { receiveResponseXMLResult: -1 };
-        }
-      },
-
-      // 4) Último erro human-readable (se existir)
-      getLastError() {
-        return { getLastErrorResult: lastError || "Sem erros." };
-      },
-
-      // 5) Fechar sessão
-      closeConnection() {
-        return { closeConnectionResult: "OK" };
-      }
-    }
+  if (!bank || !payee || !date) {
+    return res.status(400).send("Missing required params: bank, payee, date");
   }
-};
 
-// Arranca HTTP + SOAP
-const server = app.listen(PORT, () => {
-  console.log(`Servidor a ouvir na porta ${PORT}`);
-  const soapPath = "/qbwc";
-  soap.listen(server, soapPath, service, wsdlXml);
-  console.log(`SOAP service disponível em ${soapPath}`);
-});
+  const lines = [];
+  if (account && amount) {
+    lines.push({ accountFullName: account, amount, memo });
+  }
+
+  const keys = Object.keys(rest);
+  const indexes = new Set(
+    keys
+      .map((k) => {
+        const m = k.match(/^line(\d+)_/);
+        return m ? Number(m[1]) :
