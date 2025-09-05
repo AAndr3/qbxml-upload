@@ -1,12 +1,13 @@
 {
   "name": "qbxml-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Servidor Express para gerar QBXML para QuickBooks",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.4"
+    "express": "^4.19.2"
   }
 }
