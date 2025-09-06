@@ -139,7 +139,7 @@ app.post("/upload", (req, res) => {
     console.log("================================");
 
     const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-  <sendRequestXMLResult>${qbxml}</sendRequestXMLResult>
+  <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
 </sendRequestXMLResponse>`;
 
     return res.send(soap(inner));
