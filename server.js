@@ -17,12 +17,23 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `<QBXML>
+  return `<?qbxml version="13.0"?>
+<QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <CustomerQueryRq requestID="1" MaxReturned="1"/>
+    <DepositAddRq requestID="1">
+      <DepositAdd>
+        <DepositToAccountRef>
+          <FullName>Bank</FullName>
+        </DepositToAccountRef>
+        <DepositLineAdd>
+          <Amount>100.00</Amount>
+        </DepositLineAdd>
+      </DepositAdd>
+    </DepositAddRq>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 // Endpoints simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
