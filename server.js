@@ -3,10 +3,10 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Aceitar o SOAP cru (texto)
+// Aceitar SOAP cru
 app.use(express.text({ type: "*/*", limit: "2mb" }));
 
-// Envelopador SOAP (sem espaços antes do XML decl)
+// Envolver SOAP SEM espaços antes do XML decl
 function soap(inner) {
   return `<?xml version="1.0"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -16,20 +16,32 @@ ${inner}
 </soap:Envelope>`;
 }
 
-// ---- QBXML DE TESTE (sempre válido) ----
+// --- QBXML ultra-minimal para validar parsing no QB ---
+function buildHostQueryRq() {
+  // Intuit gosta que haja a PI <?qbxml ...?>. Mantemos só ESTA (sem <?xml?> aqui dentro).
+  // Zero espaços antes da PI. Nada de BOM.
+  return `<?qbxml version="14.0"?>
+<QBXML>
+  <QBXMLMsgsRq onError="stopOnError">
+    <HostQueryRq requestID="1"/>
+  </QBXMLMsgsRq>
+</QBXML>`;
+}
+
+// (depois de passar no teste, trocamos por este)
 function buildCustomerQueryRq() {
-  // Sem <?xml?> nem <?qbxml?> aqui — apenas <QBXML>...</QBXML>
-  return `<QBXML>
+  return `<?qbxml version="14.0"?>
+<QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <CustomerQueryRq requestID="1" MaxReturned="1"/>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
 
-// ---- (Depois usamos este para o depósito) ----
+// (e por fim voltamos ao DepositAdd)
 function buildDepositAddRq() {
-  // Mantemos aqui pronto, mas primeiro valida SOAP com o CustomerQueryRq
-  return `<QBXML>
+  return `<?qbxml version="14.0"?>
+<QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq requestID="1">
       <DepositAdd>
@@ -39,7 +51,7 @@ function buildDepositAddRq() {
         </DepositToAccountRef>
         <Memo>API test deposit</Memo>
         <DepositLineAdd>
-          <!-- Linha simples; muitos ficheiros exigem ReceivedFrom -->
+          <!-- Muitos ficheiros exigem ReceivedFrom numa DepositLine -->
           <ReceivedFrom>
             <FullName>Sales and Marketing</FullName>
           </ReceivedFrom>
@@ -60,13 +72,12 @@ app.get("/support", (_req, res) => res.send("Página de suporte Earth Protex."))
 app.post("/upload", (req, res) => {
   const xml = req.body || "";
   const action = req.headers.soapaction || "";
+  const x = xml.toLowerCase();
 
   console.log("\n=== QBWC CALL RECEIVED ===");
   console.log("SOAPAction:", action);
   console.log("RAW SOAP:\n", xml);
   console.log("================================\n");
-
-  const x = xml.toLowerCase();
 
   // serverVersion
   if (x.includes("<serverversion")) {
@@ -96,10 +107,11 @@ app.post("/upload", (req, res) => {
     return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
-  // sendRequestXML  (AQUI devolvemos o QBXML **dentro de CDATA**, sem escapes)
+  // sendRequestXML
   if (x.includes("<sendrequestxml")) {
-    // 1º: provar o caminho com CustomerQueryRq
-    const qbxml = buildCustomerQueryRq();
+    // 1º: validar parsing com HostQueryRq (o mais seguro possível)
+    const qbxml = buildHostQueryRq();
+    // Se isto passar, troca para buildCustomerQueryRq(); se passar, troca para buildDepositAddRq();
 
     console.log(">> sendRequestXML() OUT (QBXML enviado a QB):\n", qbxml);
 
@@ -107,7 +119,9 @@ app.post("/upload", (req, res) => {
   <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
 </sendRequestXMLResponse>`;
 
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    // garantir header correto e que nada extra vai antes do XML
+    res.set("Content-Type", "text/xml; charset=utf-8");
+    return res.send(soap(inner));
   }
 
   // receiveResponseXML
