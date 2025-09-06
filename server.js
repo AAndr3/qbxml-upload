@@ -17,14 +17,14 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<?qbxml version="13.0"?>
+  return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <CustomerQueryRq requestID="1" MaxReturned="1"></CustomerQueryRq>
+    <CustomerQueryRq requestID="1" MaxReturned="1" />
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 // Endpoints simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
@@ -46,13 +46,13 @@ app.post("/upload", (req, res) => {
   }
 
   // 2) sendRequestXML
-  if (xml.includes("<sendRequestXML")) {
-    const qbxml = minimalQBXMLRequest();
-    const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-  <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
+if (xml.includes("<sendRequestXML")) {
+  const qbxml = minimalQBXMLRequest();
+  const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
+  <sendRequestXMLResult>${qbxml}</sendRequestXMLResult>
 </sendRequestXMLResponse>`;
-    return res.type("text/xml").send(soapResponse(inner));
-  }
+  return res.type("text/xml").send(soapResponse(inner));
+}
 
   // 3) receiveResponseXML
   if (xml.includes("<receiveResponseXML")) {
