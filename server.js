@@ -49,7 +49,7 @@ function buildCustomerQueryRq() {
 </QBXML>`;
 }
 
-// Finally, the deposit - let's make it simple and compatible
+// Simplified deposit - use most basic structure possible
 function buildDepositAddRq() {
   return `<?qbxml version="13.0"?>
 <QBXML>
@@ -60,16 +60,10 @@ function buildDepositAddRq() {
         <DepositToAccountRef>
           <FullName>Undeposited Funds</FullName>
         </DepositToAccountRef>
-        <Memo>Test deposit from API</Memo>
+        <Memo>Test API Deposit</Memo>
         <DepositLineAdd>
-          <PaymentMethodRef>
-            <FullName>Cash</FullName>
-          </PaymentMethodRef>
-          <EntityRef>
-            <FullName>Cash Customer</FullName>
-          </EntityRef>
-          <Amount>150.00</Amount>
-          <Memo>Test deposit line</Memo>
+          <Amount>100.00</Amount>
+          <Memo>Test deposit line from API</Memo>
         </DepositLineAdd>
       </DepositAdd>
     </DepositAddRq>
