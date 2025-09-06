@@ -25,11 +25,10 @@ function xmlEscape(s) {
           .replace(/'/g, "&apos;");
 }
 
-// QBXML: depósito de 100 na conta "Canada Wise USD"
+// --- SUBSTITUI a tua buildDepositAddRq por esta ---
 function buildDepositAddRq() {
-  return `<?xml version="1.0"?>
-<?qbxml version="13.0"?>
-<QBXML>
+  // IMPORTANTE: sem <?xml?> e sem <?qbxml?> aqui!
+  return `<QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq requestID="1">
       <DepositAdd>
@@ -50,6 +49,7 @@ function buildDepositAddRq() {
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 // Páginas simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
@@ -95,13 +95,15 @@ app.post("/upload", (req, res) => {
 
   // sendRequestXML
   if (x.includes("<sendrequestxml")) {
-    const qbxml = buildDepositAddRq(); // contém <?xml?>, <?qbxml?> e <QBXML>…</QBXML>
+    const qbxml = buildDepositAddRq(); // só <QBXML>…</QBXML>
     console.log(">> sendRequestXML() OUT (QBXML enviado a QB):\n", qbxml);
-
-    // Enviar ESCAPADO (sem CDATA)
-    return reply(`<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-  <sendRequestXMLResult>${xmlEscape(qbxml)}</sendRequestXMLResult>
-</sendRequestXMLResponse>`);
+  
+    // devolve EXACTAMENTE um sendRequestXMLResult com CDATA
+    const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
+    <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
+  </sendRequestXMLResponse>`;
+  
+    return res.type("text/xml; charset=utf-8").send(soapEnvelope(inner));
   }
 
   // receiveResponseXML
