@@ -20,10 +20,33 @@ function minimalQBXMLRequest() {
   return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <CustomerQueryRq requestID="1" MaxReturned="1" />
+    <DepositAddRq>
+      <DepositAdd>
+        <AccountRef>
+          <FullName>Canada Wise USD</FullName>
+        </AccountRef>
+        <CurrencyRef>
+          <FullName>US Dollar</FullName>
+        </CurrencyRef>
+        <ExchangeRate>1.3927</ExchangeRate>
+        <TxnDate>2025-09-05</TxnDate>
+        <Memo>Deposit</Memo>
+        <DepositLineAdd>
+          <ReceivedFrom>
+            <FullName>SOLTO INDUSTRIES CO LTD</FullName>
+          </ReceivedFrom>
+          <FromAccountRef>
+            <FullName>Textile Sales:Textile Sales - Sample</FullName>
+          </FromAccountRef>
+          <Memo>/URI/2022 ML AUDIT CONSUMPTION, JAN'23</Memo>
+          <Amount>1372.50</Amount>
+        </DepositLineAdd>
+      </DepositAdd>
+    </DepositAddRq>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 
 // Endpoints simples
