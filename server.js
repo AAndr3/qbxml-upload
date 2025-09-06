@@ -16,23 +16,30 @@ function soapResponse(innerXml) {
 </soap:Envelope>`;
 }
 
+
 function minimalQBXMLRequest() {
-  return `
+  return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <DepositAddRs requestID="1" statusCode="0" statusSeverity="Info" statusMessage="Status OK">
+    <DepositAddRq requestID="1">
       <DepositAdd>
+        <TxnDate>2025-09-06</TxnDate>
         <DepositToAccountRef>
           <FullName>Canada Wise USD</FullName>
         </DepositToAccountRef>
         <DepositLineAdd>
+          <AccountRef>
+            <FullName>Sales and Marketing</FullName>
+          </AccountRef>
           <Amount>100.00</Amount>
+          <Memo>Depósito de teste QBWC</Memo>
         </DepositLineAdd>
       </DepositAdd>
     </DepositAddRq>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 
 // Endpoints simples
