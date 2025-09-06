@@ -17,14 +17,8 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `<?qbxml version="13.0"?>
-<QBXML>
-  <QBXMLMsgsRq onError="stopOnError">
-    <CustomerQueryRq requestID="1" MaxReturned="1"/>
-  </QBXMLMsgsRq>
-</QBXML>`;
+  return `<?qbxml version="13.0"?><QBXML><QBXMLMsgsRq onError="stopOnError"><CustomerQueryRq requestID="1" MaxReturned="1"/></QBXMLMsgsRq></QBXML>`;
 }
-
 
 // Endpoints simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
