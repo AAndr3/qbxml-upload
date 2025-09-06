@@ -17,7 +17,11 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `<?qbxml version="13.0"?><QBXML><QBXMLMsgsRq onError="stopOnError"><CustomerQueryRq requestID="1" MaxReturned="1"/></QBXMLMsgsRq></QBXML>`;
+  return `<QBXML>
+  <QBXMLMsgsRq onError="stopOnError">
+    <CustomerQueryRq requestID="1" MaxReturned="1"/>
+  </QBXMLMsgsRq>
+</QBXML>`;
 }
 
 // Endpoints simples
@@ -48,16 +52,16 @@ app.post("/upload", (req, res) => {
 
   // 2) sendRequestXML
   if (xml.includes("<sendRequestXML")) {
-  const qbxml = minimalQBXMLRequest();
-
-  const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-    <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
-  </sendRequestXMLResponse>`;
-
-  console.log(">> Responding to sendRequestXML() with QBXML:\n", qbxml);
-
-  return res.type("text/xml").send(soapResponse(inner));
-}
+    const body = minimalQBXMLRequest(); // só <QBXML>...</QBXML>
+    const qbxmlFull = `<?xml version="1.0"?><?qbxml version="13.0"?>${body}`;
+  
+    const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
+      <sendRequestXMLResult>${qbxmlFull}</sendRequestXMLResult>
+    </sendRequestXMLResponse>`;
+  
+    console.log(">> Responding to sendRequestXML() with QBXML:\n", qbxmlFull);
+    return res.type("text/xml").send(soapResponse(inner));
+  }
 
   // 3) receiveResponseXML
   if (xml.includes("<receiveResponseXML")) {
