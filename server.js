@@ -17,8 +17,7 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `
-<?qbxml version="13.0"?>
+  return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq>
@@ -26,8 +25,12 @@ function minimalQBXMLRequest() {
         <AccountRef>
           <FullName>Canada Wise USD</FullName>
         </AccountRef>
+        <CurrencyRef>
+          <FullName>US Dollar</FullName>
+        </CurrencyRef>
+        <ExchangeRate>1.3927</ExchangeRate>
         <TxnDate>2025-09-06</TxnDate>
-        <Memo>Deposit TEST - ${Date.now()}</Memo>
+        <Memo>Deposit TEST ${Date.now()}</Memo>
         <DepositLineAdd>
           <ReceivedFrom>
             <FullName>SOLTO INDUSTRIES CO LTD</FullName>
@@ -35,7 +38,7 @@ function minimalQBXMLRequest() {
           <FromAccountRef>
             <FullName>Textile Sales:Textile Sales - Sample</FullName>
           </FromAccountRef>
-          <Memo>Sample deposit via API</Memo>
+          <Memo>/URI/2022 ML AUDIT CONSUMPTION, JAN&apos;23</Memo>
           <Amount>307.50</Amount>
         </DepositLineAdd>
       </DepositAdd>
@@ -43,6 +46,7 @@ function minimalQBXMLRequest() {
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 // Endpoints simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
