@@ -56,14 +56,14 @@ app.post("/upload", (req, res) => {
 
   // 2) sendRequestXML — QBWC asks us what to send to QuickBooks
   if (action.includes("sendrequestxml") || xml.includes("<sendRequestXML")) {
-    const qbxml = minimalQBXMLRequest();
+    const qbxml = minimalQBXMLRequest(); // ou substitui por QBXML real
     const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-  <sendRequestXMLResult>${escapeXml(qbxml)}</sendRequestXMLResult>
-</sendRequestXMLResponse>`;
-
+    <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
+  </sendRequestXMLResponse>`;
+  
     return res.type("text/xml").send(soapResponse(inner));
   }
-
+  
   // 3) receiveResponseXML — QBWC returns response from QB; we must return percentage done (0–100)
   if (action.includes("receiveresponsexml") || xml.includes("<receiveResponseXML")) {
     // You could parse the response here and decide progress. We'll say we're done.
