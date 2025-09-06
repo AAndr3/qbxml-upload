@@ -132,3 +132,7 @@ app.post("/upload", (req, res) => {
   return res.type("text/xml").send(soapResponse(inner));
 });
 
+app.listen(port, () => {
+  console.log(`Servidor a correr na porta ${port}`);
+});
+
