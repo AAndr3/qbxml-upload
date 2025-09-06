@@ -3,23 +3,22 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Aceitar SOAP cru
+// Accept raw SOAP with proper encoding handling
 app.use(express.text({ type: "*/*", limit: "2mb" }));
 
-// Envolver SOAP SEM espaços antes do XML decl
+// SOAP wrapper - ensure no extra whitespace
 function soap(inner) {
-  return `<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  return `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <soap:Body>
 ${inner}
   </soap:Body>
 </soap:Envelope>`;
 }
 
-// --- QBXML ultra-minimal para validar parsing no QB ---
+// Ultra-minimal QBXML for validation - start with this
 function buildHostQueryRq() {
-  // Intuit gosta que haja a PI <?qbxml ...?>. Mantemos só ESTA (sem <?xml?> aqui dentro).
-  // Zero espaços antes da PI. Nada de BOM.
+  // NO <?xml version declaration here - it's already in the SOAP envelope
   return `<?qbxml version="14.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
@@ -28,34 +27,48 @@ function buildHostQueryRq() {
 </QBXML>`;
 }
 
-// (depois de passar no teste, trocamos por este)
-function buildCustomerQueryRq() {
+// After HostQuery works, try this simpler query first
+function buildCompanyQueryRq() {
   return `<?qbxml version="14.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <CustomerQueryRq requestID="1" MaxReturned="1"/>
+    <CompanyQueryRq requestID="1"/>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
 
-// (e por fim voltamos ao DepositAdd)
-function buildDepositAddRq() {
+// Then try customer query with minimal fields
+function buildCustomerQueryRq() {
   return `<?qbxml version="14.0"?>
+<QBXML>
+  <QBXMLMsgsRq onError="stopOnError">
+    <CustomerQueryRq requestID="1">
+      <MaxReturned>1</MaxReturned>
+    </CustomerQueryRq>
+  </QBXMLMsgsRq>
+</QBXML>`;
+}
+
+// Finally, the deposit - but let's fix the structure
+function buildDepositAddRq() {
+  return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq requestID="1">
       <DepositAdd>
         <TxnDate>2025-09-06</TxnDate>
         <DepositToAccountRef>
-          <FullName>Canada Wise USD</FullName>
+          <FullName>Checking</FullName>
         </DepositToAccountRef>
         <Memo>API test deposit</Memo>
         <DepositLineAdd>
-          <!-- Muitos ficheiros exigem ReceivedFrom numa DepositLine -->
-          <ReceivedFrom>
-            <FullName>Sales and Marketing</FullName>
-          </ReceivedFrom>
+          <PaymentMethodRef>
+            <FullName>Cash</FullName>
+          </PaymentMethodRef>
           <Amount>100.00</Amount>
+          <EntityRef>
+            <FullName>Cash Customer</FullName>
+          </EntityRef>
           <Memo>API test line</Memo>
         </DepositLineAdd>
       </DepositAdd>
@@ -64,11 +77,11 @@ function buildDepositAddRq() {
 </QBXML>`;
 }
 
-// Páginas simples
+// Simple pages
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
 app.get("/support", (_req, res) => res.send("Página de suporte Earth Protex."));
 
-// Endpoint do QBWC
+// QBWC endpoint
 app.post("/upload", (req, res) => {
   const xml = req.body || "";
   const action = req.headers.soapaction || "";
@@ -79,12 +92,18 @@ app.post("/upload", (req, res) => {
   console.log("RAW SOAP:\n", xml);
   console.log("================================\n");
 
+  // Set proper response headers for all responses
+  res.set({
+    'Content-Type': 'text/xml; charset=utf-8',
+    'SOAPAction': action
+  });
+
   // serverVersion
   if (x.includes("<serverversion")) {
     const inner = `<serverVersionResponse xmlns="http://developer.intuit.com/">
-  <serverVersionResult></serverVersionResult>
+  <serverVersionResult>1.0.0</serverVersionResult>
 </serverVersionResponse>`;
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    return res.send(soap(inner));
   }
 
   // clientVersion
@@ -92,7 +111,7 @@ app.post("/upload", (req, res) => {
     const inner = `<clientVersionResponse xmlns="http://developer.intuit.com/">
   <clientVersionResult></clientVersionResult>
 </clientVersionResponse>`;
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    return res.send(soap(inner));
   }
 
   // authenticate
@@ -103,34 +122,43 @@ app.post("/upload", (req, res) => {
     <string></string>
   </authenticateResult>
 </authenticateResponse>`;
-    console.log(">> authenticate()");
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
-  }
-
-  // sendRequestXML
-  if (x.includes("<sendrequestxml")) {
-    // 1º: validar parsing com HostQueryRq (o mais seguro possível)
-    const qbxml = buildHostQueryRq();
-    // Se isto passar, troca para buildCustomerQueryRq(); se passar, troca para buildDepositAddRq();
-
-    console.log(">> sendRequestXML() OUT (QBXML enviado a QB):\n", qbxml);
-
-    const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-  <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
-</sendRequestXMLResponse>`;
-
-    // garantir header correto e que nada extra vai antes do XML
-    res.set("Content-Type", "text/xml; charset=utf-8");
+    console.log(">> authenticate() - Session started");
     return res.send(soap(inner));
   }
 
-  // receiveResponseXML
+  // sendRequestXML - This is where your XML gets sent to QB
+  if (x.includes("<sendrequestxml")) {
+    // Start with the safest possible request
+    const qbxml = buildHostQueryRq();
+    
+    // Log exactly what we're sending
+    console.log(">> sendRequestXML() OUT (QBXML enviado a QB):");
+    console.log(qbxml);
+    console.log("================================");
+
+    const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
+  <sendRequestXMLResult>${qbxml}</sendRequestXMLResult>
+</sendRequestXMLResponse>`;
+
+    return res.send(soap(inner));
+  }
+
+  // receiveResponseXML - QB's response comes back here
   if (x.includes("<receiveresponsexml")) {
-    console.log(">> receiveResponseXML() IN (resposta do QB):\n", xml);
+    console.log(">> receiveResponseXML() IN (resposta do QB):");
+    console.log(xml);
+    console.log("================================");
+    
+    // Check for errors in the response
+    if (xml.includes("0x80040400")) {
+      console.log("ERROR: QuickBooks XML parsing error detected!");
+      console.log("This usually means malformed XML was sent to QB.");
+    }
+    
     const inner = `<receiveResponseXMLResponse xmlns="http://developer.intuit.com/">
   <receiveResponseXMLResult>100</receiveResponseXMLResult>
 </receiveResponseXMLResponse>`;
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    return res.send(soap(inner));
   }
 
   // getLastError
@@ -138,7 +166,7 @@ app.post("/upload", (req, res) => {
     const inner = `<getLastErrorResponse xmlns="http://developer.intuit.com/">
   <getLastErrorResult></getLastErrorResult>
 </getLastErrorResponse>`;
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    return res.send(soap(inner));
   }
 
   // connectionError
@@ -146,24 +174,27 @@ app.post("/upload", (req, res) => {
     const inner = `<connectionErrorResponse xmlns="http://developer.intuit.com/">
   <connectionErrorResult>done</connectionErrorResult>
 </connectionErrorResponse>`;
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    return res.send(soap(inner));
   }
 
   // closeConnection
   if (x.includes("<closeconnection")) {
+    console.log(">> closeConnection() - Session ended");
     const inner = `<closeConnectionResponse xmlns="http://developer.intuit.com/">
   <closeConnectionResult>OK</closeConnectionResult>
 </closeConnectionResponse>`;
-    return res.type("text/xml; charset=utf-8").send(soap(inner));
+    return res.send(soap(inner));
   }
 
   // fallback
+  console.log(">> Unhandled request - using fallback response");
   const inner = `<receiveResponseXMLResponse xmlns="http://developer.intuit.com/">
   <receiveResponseXMLResult>100</receiveResponseXMLResult>
 </receiveResponseXMLResponse>`;
-  return res.type("text/xml; charset=utf-8").send(soap(inner));
+  return res.send(soap(inner));
 });
 
 app.listen(port, () => {
-  console.log(`Servidor a correr na porta ${port}`);
+  console.log(`Servidor QBWC rodando na porta ${port}`);
+  console.log(`Endpoint: http://localhost:${port}/upload`);
 });
