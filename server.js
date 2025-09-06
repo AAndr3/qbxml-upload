@@ -17,31 +17,12 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<?qbxml version="13.0"?>
+  return `
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq>
       <DepositAdd>
-        <AccountRef>
-          <FullName>Canada Wise USD</FullName>
-        </AccountRef>
-        <CurrencyRef>
-          <FullName>US Dollar</FullName>
-        </CurrencyRef>
-        <ExchangeRate>1.3927</ExchangeRate>
-        <TxnDate>2025-09-05</TxnDate>
-        <Memo>Deposit</Memo>
-        <DepositLineAdd>
-          <ReceivedFrom>
-            <FullName>SOLTO INDUSTRIES CO LTD</FullName>
-          </ReceivedFrom>
-          <FromAccountRef>
-            <FullName>Textile Sales:Textile Sales - Sample</FullName>
-          </FromAccountRef>
-          <Memo>/URI/2022 ML AUDIT CONSUMPTION, JAN'23</Memo>
-          <Amount>1372.50</Amount>
-        </DepositLineAdd>
+        ...
       </DepositAdd>
     </DepositAddRq>
   </QBXMLMsgsRq>
