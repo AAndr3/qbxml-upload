@@ -18,7 +18,8 @@ function soapResponse(innerXml) {
 
 
 function minimalQBXMLRequest() {
-  return `<?qbxml version="13.0"?>
+  return `<?xml version="1.0"?>
+<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq requestID="1">
@@ -32,13 +33,14 @@ function minimalQBXMLRequest() {
             <FullName>Sales and Marketing</FullName>
           </AccountRef>
           <Amount>100.00</Amount>
-          <Memo>Depósito de teste QBWC</Memo>
+          <Memo>Test Deposit</Memo>
         </DepositLineAdd>
       </DepositAdd>
     </DepositAddRq>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 
 
@@ -70,16 +72,16 @@ app.post("/upload", (req, res) => {
 
   // 2) sendRequestXML
   if (xml.includes("<sendRequestXML")) {
-    const body = minimalQBXMLRequest(); // só <QBXML>...</QBXML>
-    const qbxmlFull = `<?xml version="1.0"?><?qbxml version="13.0"?>${body}`;
-  
+    const qbxmlBody = minimalQBXMLRequest(); // já tem tudo!
+    
     const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-      <sendRequestXMLResult>${qbxmlFull}</sendRequestXMLResult>
+      <sendRequestXMLResult><![CDATA[${qbxmlBody}]]></sendRequestXMLResult>
     </sendRequestXMLResponse>`;
   
-    console.log(">> Responding to sendRequestXML() with QBXML:\n", qbxmlFull);
+    console.log(">> Responding to sendRequestXML() with QBXML:\n", qbxmlBody);
     return res.type("text/xml").send(soapResponse(inner));
   }
+
 
   // 3) receiveResponseXML
   if (xml.includes("<receiveResponseXML")) {
