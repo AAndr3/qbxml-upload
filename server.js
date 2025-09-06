@@ -17,7 +17,7 @@ function soapResponse(innerXml) {
 }
 
 function minimalQBXMLRequest() {
-  return `<?qbxml version="13.0"?>
+  return `
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq requestID="1">
