@@ -49,7 +49,7 @@ function buildCustomerQueryRq() {
 </QBXML>`;
 }
 
-// Finally, the deposit - but let's fix the structure
+// Finally, the deposit - let's make it simple and compatible
 function buildDepositAddRq() {
   return `<?qbxml version="13.0"?>
 <QBXML>
@@ -58,24 +58,23 @@ function buildDepositAddRq() {
       <DepositAdd>
         <TxnDate>2025-09-06</TxnDate>
         <DepositToAccountRef>
-          <FullName>Checking</FullName>
+          <FullName>Undeposited Funds</FullName>
         </DepositToAccountRef>
-        <Memo>API test deposit</Memo>
+        <Memo>Test deposit from API</Memo>
         <DepositLineAdd>
           <PaymentMethodRef>
             <FullName>Cash</FullName>
           </PaymentMethodRef>
-          <Amount>100.00</Amount>
           <EntityRef>
             <FullName>Cash Customer</FullName>
           </EntityRef>
-          <Memo>API test line</Memo>
+          <Amount>150.00</Amount>
+          <Memo>Test deposit line</Memo>
         </DepositLineAdd>
       </DepositAdd>
     </DepositAddRq>
   </QBXMLMsgsRq>
 </QBXML>`;
-}
 
 // Simple pages
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
@@ -128,8 +127,13 @@ app.post("/upload", (req, res) => {
 
   // sendRequestXML - This is where your XML gets sent to QB
   if (x.includes("<sendrequestxml")) {
-    // Start with the safest possible request
-    const qbxml = buildHostQueryRq();
+    // Progress through different request types:
+    // 1. buildHostQueryRq() ✓ WORKING!
+    // 2. buildCompanyQueryRq() <- Try this next
+    // 3. buildCustomerQueryRq() 
+    // 4. buildDepositAddRq()
+    
+    const qbxml = buildCompanyQueryRq(); // <-- Changed to next test
     
     // Log exactly what we're sending
     console.log(">> sendRequestXML() OUT (QBXML enviado a QB):");
