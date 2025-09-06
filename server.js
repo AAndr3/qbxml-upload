@@ -19,6 +19,9 @@ app.get("/support", (req, res) => {
 // Endpoint principal que o Web Connector chama
 app.post("/upload", (req, res) => {
   // Ignora a password por enquanto
+  console.log("=== RECEIVED REQUEST ===");
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
   console.log("Ligação recebida do Web Connector");
   console.log("Authorization header:", req.headers.authorization); // opcional
 
