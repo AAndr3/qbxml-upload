@@ -3,31 +3,32 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Aceitar SOAP como texto cru
+// Aceitar o SOAP cru (texto)
 app.use(express.text({ type: "*/*", limit: "2mb" }));
 
-// Helpers
-function soapEnvelope(innerXml) {
+// Envelopador SOAP (sem espaços antes do XML decl)
+function soap(inner) {
   return `<?xml version="1.0"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-${innerXml}
+${inner}
   </soap:Body>
 </soap:Envelope>`;
 }
 
-// Escape seguro para embutir QBXML dentro do SOAP
-function xmlEscape(s) {
-  return s.replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&apos;");
+// ---- QBXML DE TESTE (sempre válido) ----
+function buildCustomerQueryRq() {
+  // Sem <?xml?> nem <?qbxml?> aqui — apenas <QBXML>...</QBXML>
+  return `<QBXML>
+  <QBXMLMsgsRq onError="stopOnError">
+    <CustomerQueryRq requestID="1" MaxReturned="1"/>
+  </QBXMLMsgsRq>
+</QBXML>`;
 }
 
-// --- SUBSTITUI a tua buildDepositAddRq por esta ---
+// ---- (Depois usamos este para o depósito) ----
 function buildDepositAddRq() {
-  // IMPORTANTE: sem <?xml?> e sem <?qbxml?> aqui!
+  // Mantemos aqui pronto, mas primeiro valida SOAP com o CustomerQueryRq
   return `<QBXML>
   <QBXMLMsgsRq onError="stopOnError">
     <DepositAddRq requestID="1">
@@ -38,9 +39,10 @@ function buildDepositAddRq() {
         </DepositToAccountRef>
         <Memo>API test deposit</Memo>
         <DepositLineAdd>
-          <AccountRef>
+          <!-- Linha simples; muitos ficheiros exigem ReceivedFrom -->
+          <ReceivedFrom>
             <FullName>Sales and Marketing</FullName>
-          </AccountRef>
+          </ReceivedFrom>
           <Amount>100.00</Amount>
           <Memo>API test line</Memo>
         </DepositLineAdd>
@@ -50,12 +52,11 @@ function buildDepositAddRq() {
 </QBXML>`;
 }
 
-
 // Páginas simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
 app.get("/support", (_req, res) => res.send("Página de suporte Earth Protex."));
 
-// Endpoint principal do QBWC
+// Endpoint do QBWC
 app.post("/upload", (req, res) => {
   const xml = req.body || "";
   const action = req.headers.soapaction || "";
@@ -66,83 +67,89 @@ app.post("/upload", (req, res) => {
   console.log("================================\n");
 
   const x = xml.toLowerCase();
-  const reply = (inner) => res.type("text/xml; charset=utf-8").send(soapEnvelope(inner));
 
   // serverVersion
   if (x.includes("<serverversion")) {
-    return reply(`<serverVersionResponse xmlns="http://developer.intuit.com/">
+    const inner = `<serverVersionResponse xmlns="http://developer.intuit.com/">
   <serverVersionResult></serverVersionResult>
-</serverVersionResponse>`);
+</serverVersionResponse>`;
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // clientVersion
   if (x.includes("<clientversion")) {
-    return reply(`<clientVersionResponse xmlns="http://developer.intuit.com/">
+    const inner = `<clientVersionResponse xmlns="http://developer.intuit.com/">
   <clientVersionResult></clientVersionResult>
-</clientVersionResponse>`);
+</clientVersionResponse>`;
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // authenticate
   if (x.includes("<authenticate")) {
-    console.log(">> Responding to authenticate()");
-    return reply(`<authenticateResponse xmlns="http://developer.intuit.com/">
+    const inner = `<authenticateResponse xmlns="http://developer.intuit.com/">
   <authenticateResult>
     <string>SESSION-EP-123</string>
     <string></string>
   </authenticateResult>
-</authenticateResponse>`);
+</authenticateResponse>`;
+    console.log(">> authenticate()");
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
-  // sendRequestXML
+  // sendRequestXML  (AQUI devolvemos o QBXML **dentro de CDATA**, sem escapes)
   if (x.includes("<sendrequestxml")) {
-    const qbxml = buildDepositAddRq(); // só <QBXML>…</QBXML>
+    // 1º: provar o caminho com CustomerQueryRq
+    const qbxml = buildCustomerQueryRq();
+
     console.log(">> sendRequestXML() OUT (QBXML enviado a QB):\n", qbxml);
-  
-    // devolve EXACTAMENTE um sendRequestXMLResult com CDATA
+
     const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-    <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
-  </sendRequestXMLResponse>`;
-  
-    return res.type("text/xml; charset=utf-8").send(soapEnvelope(inner));
+  <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
+</sendRequestXMLResponse>`;
+
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // receiveResponseXML
   if (x.includes("<receiveresponsexml")) {
     console.log(">> receiveResponseXML() IN (resposta do QB):\n", xml);
-    // 100 = done
-    return reply(`<receiveResponseXMLResponse xmlns="http://developer.intuit.com/">
+    const inner = `<receiveResponseXMLResponse xmlns="http://developer.intuit.com/">
   <receiveResponseXMLResult>100</receiveResponseXMLResult>
-</receiveResponseXMLResponse>`);
+</receiveResponseXMLResponse>`;
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // getLastError
   if (x.includes("<getlasterror")) {
-    return reply(`<getLastErrorResponse xmlns="http://developer.intuit.com/">
+    const inner = `<getLastErrorResponse xmlns="http://developer.intuit.com/">
   <getLastErrorResult></getLastErrorResult>
-</getLastErrorResponse>`);
+</getLastErrorResponse>`;
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // connectionError
   if (x.includes("<connectionerror")) {
-    return reply(`<connectionErrorResponse xmlns="http://developer.intuit.com/">
+    const inner = `<connectionErrorResponse xmlns="http://developer.intuit.com/">
   <connectionErrorResult>done</connectionErrorResult>
-</connectionErrorResponse>`);
+</connectionErrorResponse>`;
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // closeConnection
   if (x.includes("<closeconnection")) {
-    return reply(`<closeConnectionResponse xmlns="http://developer.intuit.com/">
+    const inner = `<closeConnectionResponse xmlns="http://developer.intuit.com/">
   <closeConnectionResult>OK</closeConnectionResult>
-</closeConnectionResponse>`);
+</closeConnectionResponse>`;
+    return res.type("text/xml; charset=utf-8").send(soap(inner));
   }
 
   // fallback
-  return reply(`<receiveResponseXMLResponse xmlns="http://developer.intuit.com/">
+  const inner = `<receiveResponseXMLResponse xmlns="http://developer.intuit.com/">
   <receiveResponseXMLResult>100</receiveResponseXMLResult>
-</receiveResponseXMLResponse>`);
+</receiveResponseXMLResponse>`;
+  return res.type("text/xml; charset=utf-8").send(soap(inner));
 });
 
-// Start
 app.listen(port, () => {
   console.log(`Servidor a correr na porta ${port}`);
 });
