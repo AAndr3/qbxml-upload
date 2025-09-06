@@ -37,14 +37,14 @@ function buildCompanyQueryRq() {
 </QBXML>`;
 }
 
-// Then try customer query with minimal fields
-function buildCustomerQueryRq() {
-  return `<?qbxml version="14.0"?>
+// Check what accounts exist in QuickBooks
+function buildAccountQueryRq() {
+  return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <CustomerQueryRq requestID="1">
-      <MaxReturned>1</MaxReturned>
-    </CustomerQueryRq>
+    <AccountQueryRq requestID="1">
+      <MaxReturned>50</MaxReturned>
+    </AccountQueryRq>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
