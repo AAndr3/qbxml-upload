@@ -23,7 +23,7 @@ function minimalQBXMLRequest() {
     <DepositAddRq requestID="1">
       <DepositAdd>
         <DepositToAccountRef>
-          <FullName>Bank</FullName>
+          <FullName>Canada Wise USD</FullName>
         </DepositToAccountRef>
         <DepositLineAdd>
           <Amount>100.00</Amount>
@@ -33,6 +33,7 @@ function minimalQBXMLRequest() {
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 
 // Endpoints simples
