@@ -5,7 +5,7 @@
   <AppURL>https://qbxml-upload.onrender.com/qbwc</AppURL>
   <AppDescription>Integração QBXML via QuickBooks Web Connector</AppDescription>
   <AppSupport>https://qbxml-upload.onrender.com/</AppSupport>
-  <UserName>yitzac</UserName>
+  <UserName>Admin</UserName>
   <OwnerID>{57F3B9B0-86F4-4d34-AF38-AC1E5A1C3C9D}</OwnerID>
   <FileID>{8A6B5B47-2D7E-4c1c-8F6E-7E2B3E7C9C11}</FileID>
   <QBType>QBFS</QBType>
