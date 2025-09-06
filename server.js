@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const QBWC_USER = process.env.QBWC_USER || "yitzac";
+const QBWC_USER = process.env.QBWC_USER || "Admin";
 const QBWC_PASSWORD = process.env.QBWC_PASSWORD || "Coolio135!";
 const DEFAULT_BANK = process.env.QBWC_BANK || "Canada Wise USD";
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
