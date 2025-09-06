@@ -35,7 +35,6 @@ function minimalQBXMLRequest() {
 }
 
 
-
 // Endpoints simples
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
 app.get("/support", (_req, res) => res.send("Página de suporte Earth Protex."));
