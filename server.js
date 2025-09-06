@@ -20,7 +20,7 @@ function minimalQBXMLRequest() {
   return `
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <DepositAddRq requestID="1">
+    <DepositAddRs requestID="1" statusCode="0" statusSeverity="Info" statusMessage="Status OK">
       <DepositAdd>
         <DepositToAccountRef>
           <FullName>Canada Wise USD</FullName>
