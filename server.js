@@ -96,6 +96,8 @@ app.post("/upload", (req, res) => {
   if (x.includes("<sendrequestxml")) {
     const qbxml = buildDepositAddRq(); // já inclui <?xml?>, <?qbxml?> e <QBXML>...</QBXML>
     const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
+  <sendRequestXMLResult>${qbxmlBody.replace(/>/g, "&gt;").replace(/</g, "&lt;")}</sendRequestXMLResult>
+</sendRequestXMLResponse>`;
   <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
 </sendRequestXMLResponse>`;
     console.log(">> sendRequestXML() OUT (QBXML enviado a QB):\n", qbxml);
