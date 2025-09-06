@@ -49,7 +49,7 @@ function buildCustomerQueryRq() {
 </QBXML>`;
 }
 
-// Simplified deposit - use the actual bank account name
+// Deposit with Consulting Income account
 function buildDepositAddRq() {
   return `<?qbxml version="13.0"?>
 <QBXML>
@@ -60,10 +60,13 @@ function buildDepositAddRq() {
         <DepositToAccountRef>
           <FullName>Canada Wise CAD</FullName>
         </DepositToAccountRef>
-        <Memo>Test API Deposit</Memo>
+        <Memo>test</Memo>
         <DepositLineAdd>
+          <AccountRef>
+            <FullName>Consulting Income</FullName>
+          </AccountRef>
           <Amount>100.00</Amount>
-          <Memo>Test deposit line from API</Memo>
+          <Memo>test</Memo>
         </DepositLineAdd>
       </DepositAdd>
     </DepositAddRq>
