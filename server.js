@@ -18,22 +18,22 @@ app.get("/support", (req, res) => {
 
 // Endpoint principal que o Web Connector chama
 app.post("/upload", (req, res) => {
-  console.log("Pedido recebido do Web Connector:");
-  console.log(req.body);
+  // Ignora a password por enquanto
+  console.log("Ligação recebida do Web Connector");
+  console.log("Authorization header:", req.headers.authorization); // opcional
 
-  // Resposta QBXML de exemplo
-  const qbxmlResponse = `<?xml version="1.0" encoding="utf-8"?>
-<?qbxml version="13.0"?>
-<QBXML>
-  <QBXMLMsgsRs>
-    <GeneralSummaryQueryRs statusCode="0" statusSeverity="Info" statusMessage="Done">
-    </GeneralSummaryQueryRs>
-  </QBXMLMsgsRs>
-</QBXML>`;
+  const responseXML = `<?xml version="1.0" encoding="utf-8"?>
+  <?qbxml version="13.0"?>
+  <QBXML>
+    <QBXMLMsgsRs>
+      <GeneralSummaryQueryRs statusCode="0" statusSeverity="Info" statusMessage="Ligado com sucesso (sem validar password)">
+      </GeneralSummaryQueryRs>
+    </QBXMLMsgsRs>
+  </QBXML>`;
 
-  res.type("text/xml");
-  res.send(qbxmlResponse);
+  res.type("text/xml").send(responseXML);
 });
+
 
 // Iniciar servidor
 app.listen(port, () => {
