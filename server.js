@@ -1,4 +1,4 @@
- // server.js (ESM)
+// server.js (ESM)
 import express from "express";
 import soap from "soap";
 import { fileURLToPath } from "url";
@@ -91,7 +91,6 @@ app.get("/", (_req, res) => {
   res.send("Servidor QBXML ativo ✅");
 });
 
-/** Descarregar o .QWC para instalar no Web Connector */
 app.get("/andre-importador.qwc", (_req, res) => {
   const qwc = `<?xml version="1.0"?>
 <QBWCXML>
@@ -112,7 +111,6 @@ app.get("/andre-importador.qwc", (_req, res) => {
   res.send(qwc);
 });
 
-/** Dinâmico: /check.qbxml?...  */
 app.get("/check.qbxml", (req, res) => {
   const { bank, payee, date, memo, ref, account, amount, ...rest } = req.query;
   if (!bank || !payee || !date) {
@@ -136,9 +134,7 @@ app.get("/check.qbxml", (req, res) => {
   });
 
   if (lines.length === 0) {
-    return res
-      .status(400)
-      .send("Provide at least one expense line (account/amount or lineN_*).");
+    return res.status(400).send("Provide at least one expense line (account/amount or lineN_*).");
   }
 
   const xml = gerarCheckAddQBXML({
@@ -154,204 +150,9 @@ app.get("/check.qbxml", (req, res) => {
   res.send(xml);
 });
 
-/** Exemplo fixo para testar */
 app.get("/check-exemplo.qbxml", (_req, res) => {
   res.set("Content-Type", "text/xml; charset=utf-8");
   res.send(exemploQBXML());
 });
 
-// ---------- WSDL INLINE (evita problemas de path no Render) ----------
-const WSDL = `<?xml version="1.0" encoding="UTF-8"?>
-<definitions name="QBWebConnectorSvc"
-  targetNamespace="http://developer.intuit.com/"
-  xmlns:tns="http://developer.intuit.com/"
-  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
-
-  <wsdl:types>
-    <xsd:schema targetNamespace="http://developer.intuit.com/">
-      <xsd:complexType name="ArrayOfString">
-        <xsd:sequence>
-          <xsd:element name="string" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
-        </xsd:sequence>
-      </xsd:complexType>
-
-      <xsd:element name="authenticate">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="strUserName" type="xsd:string"/>
-          <xsd:element name="strPassword" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-      <xsd:element name="authenticateResponse">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="authenticateResult" type="tns:ArrayOfString"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-
-      <xsd:element name="sendRequestXML">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="ticket" type="xsd:string"/>
-          <xsd:element name="strHCPResponse" type="xsd:string"/>
-          <xsd:element name="strCompanyFileName" type="xsd:string"/>
-          <xsd:element name="qbXMLCountry" type="xsd:string"/>
-          <xsd:element name="qbXMLMajorVers" type="xsd:int"/>
-          <xsd:element name="qbXMLMinorVers" type="xsd:int"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-      <xsd:element name="sendRequestXMLResponse">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="sendRequestXMLResult" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-
-      <xsd:element name="receiveResponseXML">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="ticket" type="xsd:string"/>
-          <xsd:element name="response" type="xsd:string"/>
-          <xsd:element name="hresult" type="xsd:string"/>
-          <xsd:element name="message" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-      <xsd:element name="receiveResponseXMLResponse">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="receiveResponseXMLResult" type="xsd:int"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-
-      <xsd:element name="getLastError">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="ticket" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-      <xsd:element name="getLastErrorResponse">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="getLastErrorResult" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-
-      <xsd:element name="closeConnection">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="ticket" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-      <xsd:element name="closeConnectionResponse">
-        <xsd:complexType><xsd:sequence>
-          <xsd:element name="closeConnectionResult" type="xsd:string"/>
-        </xsd:sequence></xsd:complexType>
-      </xsd:element>
-    </xsd:schema>
-  </wsdl:types>
-
-  <wsdl:message name="authenticateRequest"><wsdl:part name="parameters" element="tns:authenticate"/></wsdl:message>
-  <wsdl:message name="authenticateResponse"><wsdl:part name="parameters" element="tns:authenticateResponse"/></wsdl:message>
-
-  <wsdl:message name="sendRequestXMLRequest"><wsdl:part name="parameters" element="tns:sendRequestXML"/></wsdl:message>
-  <wsdl:message name="sendRequestXMLResponse"><wsdl:part name="parameters" element="tns:sendRequestXMLResponse"/></wsdl:message>
-
-  <wsdl:message name="receiveResponseXMLRequest"><wsdl:part name="parameters" element="tns:receiveResponseXML"/></wsdl:message>
-  <wsdl:message name="receiveResponseXMLResponse"><wsdl:part name="parameters" element="tns:receiveResponseXMLResponse"/></wsdl:message>
-
-  <wsdl:message name="getLastErrorRequest"><wsdl:part name="parameters" element="tns:getLastError"/></wsdl:message>
-  <wsdl:message name="getLastErrorResponse"><wsdl:part name="parameters" element="tns:getLastErrorResponse"/></wsdl:message>
-
-  <wsdl:message name="closeConnectionRequest"><wsdl:part name="parameters" element="tns:closeConnection"/></wsdl:message>
-  <wsdl:message name="closeConnectionResponse"><wsdl:part name="parameters" element="tns:closeConnectionResponse"/></wsdl:message>
-
-  <wsdl:portType name="QBWebConnectorSvcSoap">
-    <wsdl:operation name="authenticate">
-      <wsdl:input message="tns:authenticateRequest"/><wsdl:output message="tns:authenticateResponse"/>
-    </wsdl:operation>
-    <wsdl:operation name="sendRequestXML">
-      <wsdl:input message="tns:sendRequestXMLRequest"/><wsdl:output message="tns:sendRequestXMLResponse"/>
-    </wsdl:operation>
-    <wsdl:operation name="receiveResponseXML">
-      <wsdl:input message="tns:receiveResponseXMLRequest"/><wsdl:output message="tns:receiveResponseXMLResponse"/>
-    </wsdl:operation>
-    <wsdl:operation name="getLastError">
-      <wsdl:input message="tns:getLastErrorRequest"/><wsdl:output message="tns:getLastErrorResponse"/>
-    </wsdl:operation>
-    <wsdl:operation name="closeConnection">
-      <wsdl:input message="tns:closeConnectionRequest"/><wsdl:output message="tns:closeConnectionResponse"/>
-    </wsdl:operation>
-  </wsdl:portType>
-
-  <wsdl:binding name="QBWebConnectorSvcSoap" type="tns:QBWebConnectorSvcSoap">
-    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
-    <wsdl:operation name="authenticate"><soap:operation soapAction="http://developer.intuit.com/authenticate"/>
-      <wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="sendRequestXML"><soap:operation soapAction="http://developer.intuit.com/sendRequestXML"/>
-      <wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="receiveResponseXML"><soap:operation soapAction="http://developer.intuit.com/receiveResponseXML"/>
-      <wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="getLastError"><soap:operation soapAction="http://developer.intuit.com/getLastError"/>
-      <wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="closeConnection"><soap:operation soapAction="http://developer.intuit.com/closeConnection"/>
-      <wsdl:input><soap:body use="literal"/></wsdl:input><wsdl:output><soap:body use="literal"/></wsdl:output>
-    </wsdl:operation>
-  </wsdl:binding>
-
-  <wsdl:service name="QBWebConnectorSvc">
-    <wsdl:port name="QBWebConnectorSvcSoap" binding="tns:QBWebConnectorSvcSoap">
-      <soap:address location="${BASE_URL}/qbwc"/>
-    </wsdl:port>
-  </wsdl:service>
-</definitions>`;
-
-// ---------- IMPLEMENTAÇÃO SOAP ----------
-const soapService = {
-  QBWebConnectorSvc: {
-    QBWebConnectorSvcSoap: {
-      authenticate(args) {
-        console.log("[QBWC] authenticate", args);
-        const ok =
-          args.strUserName === QBWC_USER && args.strPassword === QBWC_PASSWORD;
-        if (ok) {
-          const ticket = Date.now().toString();
-          // Garante dois <string> (evita "Response not well-formed XML")
-          return { authenticateResult: { string: [ticket, ""] } };
-        } else {
-          return { authenticateResult: { string: ["", "nvu"] } };
-        }
-      },
-      sendRequestXML(args) {
-        console.log("[QBWC] sendRequestXML", args);
-        if (!hasPendingJob) {
-          return { sendRequestXMLResult: "" }; // sem trabalho
-        }
-        const qbxml = exemploQBXML();
-        console.log("[QBWC] -> enviando QBXML CheckAdd (len)", qbxml.length);
-        return { sendRequestXMLResult: qbxml };
-      },
-      receiveResponseXML(args) {
-        console.log("[QBWC] receiveResponseXML", {
-          hresult: args.hresult,
-          message: args.message,
-          responseLen: (args.response || "").length,
-        });
-        hasPendingJob = false; // concluímos o job de demo
-        lastError = args.hresult ? `${args.hresult} - ${args.message || ""}` : "";
-        return { receiveResponseXMLResult: 100 };
-      },
-      getLastError() {
-        console.log("[QBWC] getLastError ->", lastError || "Sem erros.");
-        return { getLastErrorResult: lastError || "Sem erros." };
-      },
-      closeConnection() {
-        console.log("[QBWC] closeConnection");
-        return { closeConnectionResult: "OK" };
-      },
-    },
-  },
-};
-
-// ---------- START ----------
-const server = app.listen(PORT, () => {
-  console.log(`Servidor QBXML ativo na porta ${PORT}`);
-  soap.listen(server, "/qbwc", soapService, WSDL);
-  console.log("SOAP /qbwc pronto");
-});
+// Continúa no ficheiro seguinte com o WSDL e soapService...
