@@ -22,7 +22,6 @@ ${innerXml}
 
 // Exemplo: criar um depósito simples de 100 USD na conta "Canada Wise USD"
 function buildDepositAddRq() {
-  // Importante: incluir cabeçalhos XML e qbxml e o nó <QBXML>
   return `<?xml version="1.0"?>
 <?qbxml version="13.0"?>
 <QBXML>
@@ -35,7 +34,6 @@ function buildDepositAddRq() {
         </DepositToAccountRef>
         <Memo>API test deposit</Memo>
         <DepositLineAdd>
-          <!-- Para testes, usa uma conta de resultados existente, p.ex. "Sales and Marketing" -->
           <AccountRef>
             <FullName>Sales and Marketing</FullName>
           </AccountRef>
@@ -47,6 +45,7 @@ function buildDepositAddRq() {
   </QBXMLMsgsRq>
 </QBXML>`;
 }
+
 
 // --- Páginas simples ---
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
