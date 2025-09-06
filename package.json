@@ -1,13 +1,13 @@
 {
   "name": "qbxml-upload",
   "version": "1.0.0",
-  "description": "QBWC + Express server para enviar QBXML ao QuickBooks Desktop",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "soap": "^1.0.0"
+    "express": "^4.18.2",
+    "soap": "^0.43.0"
   }
 }
