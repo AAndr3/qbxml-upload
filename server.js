@@ -20,29 +20,7 @@ function minimalQBXMLRequest() {
   return `<?qbxml version="13.0"?>
 <QBXML>
   <QBXMLMsgsRq onError="stopOnError">
-    <DepositAddRq>
-      <DepositAdd>
-        <AccountRef>
-          <FullName>Canada Wise USD</FullName>
-        </AccountRef>
-        <CurrencyRef>
-          <FullName>US Dollar</FullName>
-        </CurrencyRef>
-        <ExchangeRate>1.3927</ExchangeRate>
-        <TxnDate>2025-09-06</TxnDate>
-        <Memo>Deposit TEST ${Date.now()}</Memo>
-        <DepositLineAdd>
-          <ReceivedFrom>
-            <FullName>SOLTO INDUSTRIES CO LTD</FullName>
-          </ReceivedFrom>
-          <FromAccountRef>
-            <FullName>Textile Sales:Textile Sales - Sample</FullName>
-          </FromAccountRef>
-          <Memo>/URI/2022 ML AUDIT CONSUMPTION, JAN&apos;23</Memo>
-          <Amount>307.50</Amount>
-        </DepositLineAdd>
-      </DepositAdd>
-    </DepositAddRq>
+    <CustomerQueryRq requestID="1" MaxReturned="1"/>
   </QBXMLMsgsRq>
 </QBXML>`;
 }
@@ -76,13 +54,16 @@ app.post("/upload", (req, res) => {
 
   // 2) sendRequestXML
   if (xml.includes("<sendRequestXML")) {
-    const qbxml = minimalQBXMLRequest();
-    const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
-      <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
-    </sendRequestXMLResponse>`;
-    console.log(">> Responding to sendRequestXML() with QBXML:\n", qbxml);
-    return res.type("text/xml").send(soapResponse(inner));
-  }
+  const qbxml = minimalQBXMLRequest();
+
+  const inner = `<sendRequestXMLResponse xmlns="http://developer.intuit.com/">
+    <sendRequestXMLResult><![CDATA[${qbxml}]]></sendRequestXMLResult>
+  </sendRequestXMLResponse>`;
+
+  console.log(">> Responding to sendRequestXML() with QBXML:\n", qbxml);
+
+  return res.type("text/xml").send(soapResponse(inner));
+}
 
   // 3) receiveResponseXML
   if (xml.includes("<receiveResponseXML")) {
