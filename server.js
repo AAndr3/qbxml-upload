@@ -49,7 +49,7 @@ function buildCustomerQueryRq() {
 </QBXML>`;
 }
 
-// Simplified deposit - use most basic structure possible
+// Simplified deposit - use the actual bank account name
 function buildDepositAddRq() {
   return `<?qbxml version="13.0"?>
 <QBXML>
@@ -58,7 +58,7 @@ function buildDepositAddRq() {
       <DepositAdd>
         <TxnDate>2025-09-06</TxnDate>
         <DepositToAccountRef>
-          <FullName>Undeposited Funds</FullName>
+          <FullName>Canada Wise CAD</FullName>
         </DepositToAccountRef>
         <Memo>Test API Deposit</Memo>
         <DepositLineAdd>
