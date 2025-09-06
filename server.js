@@ -75,6 +75,7 @@ function buildDepositAddRq() {
     </DepositAddRq>
   </QBXMLMsgsRq>
 </QBXML>`;
+}
 
 // Simple pages
 app.get("/", (_req, res) => res.send("Servidor QBXML ativo."));
@@ -129,11 +130,11 @@ app.post("/upload", (req, res) => {
   if (x.includes("<sendrequestxml")) {
     // Progress through different request types:
     // 1. buildHostQueryRq() ✓ WORKING!
-    // 2. buildCompanyQueryRq() <- Try this next
-    // 3. buildCustomerQueryRq() 
-    // 4. buildDepositAddRq()
+    // 2. buildCompanyQueryRq() ✓
+    // 3. buildCustomerQueryRq() ✓ 
+    // 4. buildDepositAddRq() <- Testing deposit with line now!
     
-    const qbxml = buildCompanyQueryRq(); // <-- Changed to next test
+    const qbxml = buildDepositAddRq(); // <-- Testing deposit transaction
     
     // Log exactly what we're sending
     console.log(">> sendRequestXML() OUT (QBXML enviado a QB):");
